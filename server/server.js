@@ -18,20 +18,20 @@ const express = require('express'),
   flatCache = require('flat-cache'),
   path = require('path');
 
-let sslOptions;
-try {
-  sslOptions = {
-    key: fs.readFileSync(process.env.SSL_KEY),
-    cert: fs.readFileSync(process.env.SSL_CERT)
-  };
-} catch(err) {
-  if (err.errno === -2) {
-    console.log('No SSL key and/or cert found, not enabling https server');
-  }
-  else {
-    console.log(err);
-  }
-}
+// let sslOptions;
+// try {
+//   sslOptions = {
+//     key: fs.readFileSync(process.env.SSL_KEY),
+//     cert: fs.readFileSync(process.env.SSL_CERT)
+//   };
+// } catch(err) {
+//   if (err.errno === -2) {
+//     console.log('No SSL key and/or cert found, not enabling https server');
+//   }
+//   else {
+//     console.log(err);
+//   }
+// }
 
 // template with marko https://github.com/marko-js/marko
 require('marko/express');
@@ -41,7 +41,7 @@ const errorTemplate = require('./views/error.marko');
 
 const app = express();
 const routes = require('./routes');
-const passportMiddleware = require('./auth/passport-middleware.js');
+// const passportMiddleware = require('./auth/passport-middleware.js');
 // synchronous read, but it only happens on server init
 const cache = flatCache.load('adminData.json', path.resolve(__dirname));
 
@@ -51,7 +51,7 @@ if (cache.getKey('episodes') === undefined) {
 }
 
 // update all episodes on server init
-routes.allEpisodeData.update(cache);
+// routes.allEpisodeData.update(cache);
 
 // all environments
 app.set('cache', cache);
@@ -59,7 +59,7 @@ app.set('port', process.env.PORT || 3000);
 app.set('port-https', process.env.PORT_HTTPS || 8443);
 app.use(compression());
 app.disable('x-powered-by');
-app.use(bodyParser.json()); // support json encoded bodies
+app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
 // add pw protection if the following environment variables are provided (i.e on staging not prod)
@@ -75,41 +75,41 @@ app.use(session({
   maxAge: 128000
 }));
 
-var staticUserAuth = basicAuth({
-  users: {
-    'admin': process.env.ADMIN_PASSWORD
-  },
-  challenge: true
-});
+// var staticUserAuth = basicAuth({
+//   users: {
+//     'admin': process.env.ADMIN_PASSWORD
+//   },
+//   challenge: true
+// });
 
 // admin page
-app.use('/admin', cors({ credentials: true, origin: true }), staticUserAuth, routes.admin);
+// app.use('/admin', cors({ credentials: true, origin: true }), staticUserAuth, routes.admin);
 
-// get recent episodes to display on main page
-app.options('/recent', cors());
-app.get('/recent', cors(), routes.recentEpisodes);
+// // get recent episodes to display on main page
+// app.options('/recent', cors());
+// app.get('/recent', cors(), routes.recentEpisodes);
 
-// seach episode data (not currently used)
-app.get('/search', routes.search);
+// // seach episode data (not currently used)
+// app.get('/search', routes.search);
 
-// update episode data with latest info, or update/add invidividual episode
-app.use(`/api/${process.env.API_HASH}/update/`, routes.update);
+// // update episode data with latest info, or update/add invidividual episode
+// app.use(`/api/${process.env.API_HASH}/update/`, routes.update);
 
-// redirect to get data for a specific show from cloudfront / s3
-app.get('/d/:show', routes.getEpisode);
-//app.use(`/api/${process.env.API_HASH}/episode/:show`, routes.getEpisode);
+// // redirect to get data for a specific show from cloudfront / s3
+// app.get('/d/:show', routes.getEpisode);
+// //app.use(`/api/${process.env.API_HASH}/episode/:show`, routes.getEpisode);
 
-// passport authentication
-passportMiddleware.init(app);
-app.use('/auth', routes.auth);
+// // passport authentication
+// // passportMiddleware.init(app);
+// app.use('/auth', routes.auth);
 
 // create snippet video
 app.options('/create-video', cors());
 app.post('/create-video', cors(), routes.createVideo);
 
-// post to social media
-app.options('/social-post', cors());
-app.post('/social-post', cors(), routes.socialPost);
+// // post to social media
+// app.options('/social-post', cors());
+// app.post('/social-post', cors(), routes.socialPost);
 
 app.use(helmet());
 
@@ -188,8 +188,9 @@ app.use(function(req, res, next) {
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
-if (sslOptions) {
-  https.createServer(sslOptions, app).listen(app.get('port-https'), function(){
-    console.log('Express https server listening on port ' + app.get('port-https'));
-  });
-}
+
+// if (sslOptions) {
+//   https.createServer(sslOptions, app).listen(app.get('port-https'), function(){
+//     console.log('Express https server listening on port ' + app.get('port-https'));
+//   });
+// }

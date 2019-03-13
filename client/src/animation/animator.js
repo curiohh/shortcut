@@ -27,7 +27,6 @@ var Animator = function(opts) {
   this.height = opts.height || 400;
   this.fontFamily = opts.fontFamily || 'sans-serif';
   this.fontFamilyEpNum = opts.fontFamilyEpNum || 'sans-serif';
-
   this.xPadding = 0.05;
   this.yPadding = 0.05; // text winds up at 5% of height
 
@@ -116,8 +115,9 @@ Animator.prototype = {
       fillColor: this.textColor1,
       fontSize: epNumFontSize
     };
-    epNumText.fillColor.alpha = 0.4;
-    epNumText.content = this.epNum ? `ep. ${this.epNum}` : '';
+    epNumText.fillColor.alpha = 0.8;
+    epNumText.content = "www.curiohhapp.com"
+    // epNumText.content = this.epNum ? `ep. ${this.epNum}` : '';
 
     // resize image (must wait until image has loaded in browser)
     if (typeof(window) !== 'undefined' && window.addEventListener) {
@@ -215,6 +215,7 @@ Animator.prototype = {
       let prevTextContent = text.content;
 
       let heading = i > 0 && wordArray[i].heading;
+
       let nextWord = wordArray[i] ? wordArray[i].text.trim() : ''
 
       if (heading) {

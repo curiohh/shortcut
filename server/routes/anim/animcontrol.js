@@ -1,6 +1,6 @@
 /**
  *  Canvas animation with paper.js
- *  
+ *
  *  Create individual frames using animator module (which is same as on client-side)
  */
 
@@ -20,7 +20,7 @@ const footerImgBase64 = 'data:image/png;base64,'+string;
 
 const tempDir = process.env['TEMP'] || '/tmp';
 
-const mult = 2;
+const mult = 4;
 const w = 200*mult,
       h = 200*mult;
 

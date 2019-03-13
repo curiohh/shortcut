@@ -14,19 +14,20 @@ module.exports = {
       episodesURL = `${dataBucket}/all.json`;
       episodeDataURL = `${dataBucket}${episodeNumber}.json`;
     }
-
     request.get({
       url: episodeDataURL,
       rejectUnauthorized: false
-      },
+    },
       function(err, response, body) {
-        episodeDataCallback(err, body, startTime, endTime, episodeNumber, getAllEpisodes(), cb);
+        episodeDataCallback(err, body, startTime, endTime, episodeNumber,
+          getAllEpisodes(), cb);
       });
   }
 
 };
 
 function episodeDataCallback(err, body, _startTime, _endTime, episodeNumber, episodesBody, cb) {
+
   if (err) {
     console.log('error', err);
   }
@@ -120,7 +121,7 @@ function episodeDataCallback(err, body, _startTime, _endTime, episodeNumber, epi
 
     // Fake paragraph breaks on every word that contains a terminal punctuation.
     paragraphsInRange = wordsInRange.filter(word => (word[1].match(/(\?$|\.$|\!$|(\.|\?|\!)\"$)$/) && word[1].length > 3))
-                            .map(word => +word[0]);
+      .map(word => +word[0]);
     // Add the first paragraph
     paragraphsInRange.unshift(0);
 

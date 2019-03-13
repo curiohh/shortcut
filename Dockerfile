@@ -7,13 +7,15 @@ FROM node:10
 
 # Create app directory
 RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+RUN mkdir -p /usr/src/server
 
-# Install app dependencies
-COPY package.json /usr/src/app/
+# Install deps
+WORKDIR /usr/src/app/server
+
+copy ./server/package.json .
 RUN npm install
 
-# Bundle app source
+# Bundle app
 COPY . /usr/src/app
 
 EXPOSE 3000

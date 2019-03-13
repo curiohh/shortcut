@@ -3,16 +3,12 @@
 /**
  *  Generate the video from our snippet information.
  */
-
+const makeWaveform = require('./makeWaveform');
 const request = require('request');
 const async = require('async');
 const fs = require('fs');
+const _ = require('lodash');
 const AWS = require('aws-sdk');
-AWS.config.update({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-});
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
 const extension = '.mp4';
 const dataBucket = process.env.DATA_BUCKET;
@@ -23,6 +19,12 @@ const mimeType = 'video/mpeg';
 const fps = 20;
 const merge = require('./merge');
 const animate = require('./anim/animcontrol');
+const uuid = require('uuid/v4')
+
+AWS.config.update({
+  region: process.env.AWS_REGION,
+  credentials: new AWS.SharedIniFileCredentials({profile: 'curiohh'})
+});
 
 module.exports = function(req, res) {
   // event variables
@@ -50,7 +52,7 @@ module.exports = function(req, res) {
   opts = event.opts ? event.opts : {};
   bgColor = opts.style.bgColor;
 
-  console.log(showID);
+  const token = uuid()
 
   const WORDS = wordArray.map(function(word) {
     return word.text;
@@ -59,16 +61,16 @@ module.exports = function(req, res) {
   const SPEAKERS = wordArray.reduce(function(str, word) {
     var sep = '';
     if (word.heading) {
-     if (str.length > 0) {
-       sep = ', ';
-     }
-     return str += (sep + word.heading);
+      if (str.length > 0) {
+        sep = ', ';
+      }
+      return str += (sep + word.heading);
     } else {
-     return str;
+      return str;
     }
   }, '');
 
-  // check request details 
+  // check request details
   var data = {'hash': event.h, 'ua': event['User-Agent']};
 
   // if wordArray is a string, JSON.parse it
@@ -77,8 +79,8 @@ module.exports = function(req, res) {
   }
 
   // destination file name / key
-  dstKey = `${showID}_${startTime}_${duration}_${bgColor.slice(1)}${extension}`;
-  console.log(WORDS, SPEAKERS, data);
+  // dstKey = `${showID}_${startTime}_${duration}_${bgColor.slice(1)}${extension}`;
+  dstKey = `snippet_videos/completed/${showID}-${token}.mp4`
 
   // download HLS chunks
   var filesToDownload = parseFilesToDownload(showID, startTime, duration);
@@ -88,6 +90,7 @@ module.exports = function(req, res) {
 
   async.each(filesToDownload, function(filePath, callback) {
     downloadFile(filePath, callback);
+
   }, function(err, msg) {
     if (err) {
       failWithError('Error downloading audiofiles', err);
@@ -97,47 +100,70 @@ module.exports = function(req, res) {
       console.log('downloaded the file!!!');
       // start time relative to the first clip
       var relStart = startTime % segmentLength;
-      var tempOutName = tempDir + '/output.mp4';
+      var tempOutName = '/tmp/' + `${showID}-${token}.mp4`;
+
       opts.showNumber = event.show;
-      animate.start(startTime, duration, wordArray, event.Origin, opts, fps, function() {
-        merge.mergeFiles(localFilePaths, relStart, duration, tempOutName, fps, function(err, success) {
-          if (err) {
-            failWithError('Error merging files', err);
-          }
 
-          console.log(tempOutName);
+      makeWaveform.go(localFilePaths[0], 1000, function(err, peaks) {
+        if (err) { return "Fucking broken mate"}
+        const transcriptJSON = JSON.parse(fs.readFileSync(localFilePaths[1], 'utf8'))
 
-          uploadFile(tempOutName, dstKey, tweetData, function(err, results) {
-            if (err) {
-              failWithError('Error uploading video', err);
+        const videoStart = startTime
+        const videoEnd = startTime + duration
+
+        const wordArray = _.map(
+            _.filter(transcriptJSON.words, (word) => {
+              const start = word.start
+              const end = word.end
+              return start >= videoStart && end <= videoEnd
+            }),
+            (word, idx) => {
+              return {
+                start: word.start * 1000,
+                end: word.end * 1000,
+                text: word.word,
+                idx
+              }
             }
+          )
 
-            localFilePaths.push(tempOutName);
+        const newOpts = { ...opts, peaks }
 
-            res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-            let videoData = {
-              Bucket: results.s3.Bucket,
-              Key: results.s3.Key,
-              message: 'Successfully uploaded to S3.',
-              url: results.s3.Location
-            };
+        animate.start(startTime, duration, wordArray, event.Origin, newOpts, fps, function() {
+          merge.mergeFiles(localFilePaths.slice(2), relStart, duration, tempOutName, fps, function(err, success) {
+            if (err) {
+              res.status(500).json({
+                status: 'error',
+                'message': err
+              })
+            }
+            uploadFile(tempOutName, dstKey, tweetData, function(err, results) {
+              if (err) {
+                failWithError('Error uploading video', err);
+                return
+              }
 
-            res.json(videoData);
+              // res.header('Access-Control-Allow-Origin', '*');
+              // res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+              let videoData = {
+                Bucket: results.s3.Bucket,
+                Key: results.s3.Key,
+                message: 'Successfully uploaded to S3.',
+                url: results.s3.Location
+              };
 
-            // delete the downloaded .ts files
-            cleanupFiles(localFilePaths, function(err, msg) {
-              console.log('deleted files');
+              res.json(videoData);
+
+              // delete the downloaded .ts files
+              cleanupFiles(localFilePaths, function(err, msg) {
+                console.log('deleted files');
+              });
             });
-
           });
-
         });
       });
-
     }
   });
-
 };
 
 // ensure that event params are valid
@@ -170,7 +196,7 @@ function parseFilesToDownload(showID, startTime, duration) {
 
   // array of file URLs to download
   // var filesToDownload = startStream === endStream ? [startStream] : [startStream, endStream];
-  filesToDownload = [startStream];
+  filesToDownload = [streamBase + '.mp3', streamBase + '.json', startStream];
 
   // fill in any additional 10 second chunks between desired start and end time
   var dif = Number(endStreamID) - Number(startStreamID);
@@ -214,16 +240,14 @@ function downloadFile(origPath, callback) {
   });
 
   request.get(origPath)
-  .on('error', function(err) {
-    console.log(err);
-    callback(err);
-  })
-  .on('response', function(response) {
-    response.pipe(dlStream);
-  })
-  .on('end', function(resp) {
-    // console.log('downloaded');
-  });
+    .on('error', function(err) {
+      callback(err);
+    })
+      .on('response', function(response) {
+        response.pipe(dlStream);
+      })
+        .on('end', function(resp) {
+        });
 }
 
 function cleanupFiles(filePaths, callback) {
@@ -251,36 +275,29 @@ function uploadFile(tempFile, dstKey, tweetData, callback) {
   // upload to s3, and to twitter (not any more!), in parallel
   async.parallel({
     s3: function(cb) {
-      s3upload(params, tempFile, cb);
-    },
-    tweet: function(cb) {
-      if (!tweetData){
-        cb(null, 'no tweet');
-      }
-      else {
-        // tweet.tweetVideo(tweetData, tempFile, cb);
-      }
+      return s3upload(params, tempFile, cb);
     }
   }, function(err, results) {
-    console.log('results', results, 'err', err);
     // results is object with {'s3': , 'tweet' : }
     callback(err, results);
   });
-
 }
 
 function s3upload(params, filename, cb) {
+
   const s3 = new AWS.S3({
-    apiVersion: '2006-03-01',
-    // credentials: AWS.config.credentials,
-    region: process.env.s3Region
+    // ...awsCfg,
+    apiVersion: '2006-03-01'
   });
 
+  s3.listBuckets((err, data) => {
+    if (err) { console.log("ERROR", err); return }
+  })
   s3.upload(params)
     .on('httpUploadProgress', function(evt) {
-      // console.log(filename, 'Progress:', evt.loaded, '/', evt.total);
+      console.log(filename, 'Progress:', evt.loaded, '/', evt.total);
     })
-    .send(function(err, success){
-      cb(err, success);
-    });
+      .send(function(err, success){
+        cb(err, success);
+      });;
 }

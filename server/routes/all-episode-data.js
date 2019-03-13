@@ -84,6 +84,7 @@ const update = function(globalCache, cb) {
 
 module.exports = {
   getAllEpisodes: function() {
+    console.log("HURR", cache)
     return cache.getKey('allEpisodes');
   },
   getAllEpisodesUnfiltered: function() {

@@ -123,7 +123,7 @@ function addEpisode(episodeNum, callback) {
 }
 
 function downloadEpisode(mp3Path, cb) {
-  helpers.downloadFile(mp3Path, cb); 
+  helpers.downloadFile(mp3Path, cb);
 }
 
 function uploadWaveformAndTranscriptData(episodeNumber, showData, cb) {
@@ -148,10 +148,10 @@ function s3upload(params, cb) {
     .on('httpUploadProgress', function(evt) {
       console.log('Progress:', evt.loaded, '/', evt.total);
     })
-    .send(function(err, success){
-      console.log(success);
-      cb(err, success);
-    });
+      .send(function(err, success){
+        console.log(success);
+        cb(err, success);
+      });
 }
 
 module.exports = router;
