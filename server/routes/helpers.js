@@ -1,6 +1,7 @@
 const fs = require('fs');
 const request = require('request');
-const inactiveEpisodes = process.env.BAD_EPISODES.split(',');
+// const inactiveEpisodes = process.env.BAD_EPISODES.split(',');
+const inactiveEpisodes = "".split(',');
 const Parser = require('rss-parser');
 const parser = new Parser();
 

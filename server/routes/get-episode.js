@@ -19,7 +19,8 @@ module.exports = function(req, res) {
   }
 
   // generate signed url
-  const protectedUrl = `${process.env.CLOUDFRONT_URL}${epVersion}`;
+  // const protectedUrl = `${process.env.CLOUDFRONT_URL}${epVersion}`;
+  const protectedUrl = `${"https://<ID>.cloudfront.net/"}${epVersion}`;
   const signedUrl = cfSign.getSignedUrl(protectedUrl, req);
   res.setHeader('Cache-Control', 'public, max-age=2592000');
   res.setHeader('Expires', new Date(Date.now() + 2592000000).toUTCString());

@@ -125,7 +125,8 @@ app.get('/', function(req, res) {
   res.marko(template, {
     // version of client JS code
     latestEpisodes: latestEpisodes,
-    inactiveEpisodes: process.env.BAD_EPISODES
+    inactiveEpisodes: []
+    // inactiveEpisodes: process.env.BAD_EPISODES
   });
 });
 

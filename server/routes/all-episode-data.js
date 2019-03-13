@@ -7,7 +7,8 @@ const request = require('request'),
       helpers = require('./helpers'),
       dataUrl = process.env.DATA_BUCKET + 'episodes.json',
       rssFeed = process.env.RSS_FEED,
-      inactiveEpisodes = process.env.BAD_EPISODES.split(',');
+      inactiveEpisodes = "".split(',');
+      // inactiveEpisodes = process.env.BAD_EPISODES.split(',');
 
 // in memory cache of all available episodes as displayed on the home page (title, air date, description, number)
 let cache;
