@@ -1,0 +1,9 @@
+*/**/.env
+.git
+.gitignore
+.travis.yml
+.docker-compose.yml
+bin
+Dockerfile
+LICENSE.txt
+README.md

@@ -16,6 +16,7 @@ module.exports = {
     var inputString = 'concat:' + fileNames.join('|');
     var fadeTime = 0.002;
     // first we clip the audio
+    console.log("Clipping Audio")
     child_process.execFile(
       'ffmpeg',
       [
@@ -28,6 +29,7 @@ module.exports = {
         `${tempDir}/audio.wav`
       ],
       function(err, stdout, stderr) {
+        console.log("Doing another thing")
         child_process.execFile(
           'ffmpeg',
           [
@@ -49,6 +51,7 @@ module.exports = {
           function(err, stdout, stderr) {
             // FFmpeg done;
             // delete the leftover image files
+            console.log("delete leftover image files")
             child_process.exec(`rm ${tempDir}/*.png`, (error, stdout, stderr) => {
               console.log(`stdout: ${stdout}`);
               console.log(`stderr: ${stderr}`);

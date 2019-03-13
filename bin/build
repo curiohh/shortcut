@@ -12,8 +12,4 @@ if [ -z "$1" ]
     exit 1
 fi
 
-cd html
-docker build -t 498224427881.dkr.ecr.ap-southeast-2.amazonaws.com/shortcut:$1 .
-
-cd ../api
 docker build -t 498224427881.dkr.ecr.ap-southeast-2.amazonaws.com/shortcut:$1 .

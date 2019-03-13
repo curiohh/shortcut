@@ -5,7 +5,4 @@ services:
     ports:
       - 3000:3000
     env_file:
-      - ./server/.env-template
-    stdin_open: true
-    tty: true
-    command: /bin/bash
+      - ./server/.env

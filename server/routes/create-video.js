@@ -21,6 +21,8 @@ const merge = require('./merge');
 const animate = require('./anim/animcontrol');
 const uuid = require('uuid/v4')
 
+console.log("DATA BUCKET", dataBucket)
+
 AWS.config.update({
   region: process.env.AWS_REGION,
   credentials: new AWS.EnvironmentCredentials("AWS")
@@ -52,8 +54,6 @@ module.exports = function(req, res) {
   opts = event.opts ? event.opts : {};
   bgColor = opts.style.bgColor;
 
-  const token = uuid()
-
   const WORDS = wordArray.map(function(word) {
     return word.text;
   }).join(' ').trim();
@@ -80,7 +80,7 @@ module.exports = function(req, res) {
 
   // destination file name / key
   // dstKey = `${showID}_${startTime}_${duration}_${bgColor.slice(1)}${extension}`;
-  dstKey = `snippet_videos/completed/${showID}-${token}.mp4`
+  dstKey = `snippet_videos/completed/${showID}.mp4`
 
   // download HLS chunks
   var filesToDownload = parseFilesToDownload(showID, startTime, duration);
@@ -100,7 +100,7 @@ module.exports = function(req, res) {
       console.log('downloaded the file!!!');
       // start time relative to the first clip
       var relStart = startTime % segmentLength;
-      var tempOutName = '/tmp/' + `${showID}-${token}.mp4`;
+      var tempOutName = '/tmp/' + `${showID}.mp4`;
 
       opts.showNumber = event.show;
 
@@ -130,7 +130,7 @@ module.exports = function(req, res) {
         const newOpts = { ...opts, peaks }
 
         animate.start(startTime, duration, wordArray, event.Origin, newOpts, fps, function() {
-          merge.mergeFiles(localFilePaths.slice(2), relStart, duration, tempOutName, fps, function(err, success) {
+          merge.mergeFiles([localFilePaths[0]], relStart, duration, tempOutName, fps, function(err, success) {
             if (err) {
               res.status(500).json({
                 status: 'error',
@@ -185,30 +185,30 @@ function parseFilesToDownload(showID, startTime, duration) {
     streamBase = process.env.STREAM_URL + showID + '/stream/' + showID + '_64k_';
   }
   else {
-    streamBase = dataBucket + showID + '/' + showID;
+    streamBase = dataBucket + showID + '+/';
   }
 
-  var startStreamID = timeToSegmentID(startTime);
-  var endStreamID = timeToSegmentID(startTime + duration);
+  // var startStreamID = timeToSegmentID(startTime);
+  // var endStreamID = timeToSegmentID(startTime + duration);
 
-  var startStream = streamBase + startStreamID + '.ts';
-  var endStream = streamBase + endStreamID + '.ts';
+  // var startStream = streamBase + startStreamID + '.ts';
+  // var endStream = streamBase + endStreamID + '.ts';
 
   // array of file URLs to download
   // var filesToDownload = startStream === endStream ? [startStream] : [startStream, endStream];
-  filesToDownload = [streamBase + '.mp3', streamBase + '.json', startStream];
+  filesToDownload = [streamBase + 'podcast_snipped.mp3', streamBase + 'transcript.json'];
 
-  // fill in any additional 10 second chunks between desired start and end time
-  var dif = Number(endStreamID) - Number(startStreamID);
-  while (dif > 1) {
-    dif--;
-    var midStreamID = Number(endStreamID) - dif;
-    filesToDownload.push( streamBase + zeroPad(midStreamID) + '.ts');
-  }
+  // // fill in any additional 10 second chunks between desired start and end time
+  // var dif = Number(endStreamID) - Number(startStreamID);
+  // while (dif > 1) {
+  //   dif--;
+  //   var midStreamID = Number(endStreamID) - dif;
+  //   filesToDownload.push( streamBase + zeroPad(midStreamID) + '.ts');
+  // }
 
-  if (endStream !== startStream) {
-    filesToDownload.push(endStream);
-  }
+  // if (endStream !== startStream) {
+  //   filesToDownload.push(endStream);
+  // }
 
   return filesToDownload;
 }
