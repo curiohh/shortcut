@@ -23,7 +23,7 @@ const uuid = require('uuid/v4')
 
 AWS.config.update({
   region: process.env.AWS_REGION,
-  credentials: new AWS.SharedIniFileCredentials({profile: 'curiohh'})
+  credentials: new AWS.EnvironmentCredentials("AWS")
 });
 
 module.exports = function(req, res) {
