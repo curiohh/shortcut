@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+  then
+    echo "Please supply the version number"
+    exit 1
+fi
+
+if [ -z "$1" ]
+  then
+    echo "Please supply the version number"
+    exit 1
+fi
+
+cd html
+docker build -t 498224427881.dkr.ecr.ap-southeast-2.amazonaws.com/shortcut:$1 .
+
+cd ../api
+docker build -t 498224427881.dkr.ecr.ap-southeast-2.amazonaws.com/shortcut:$1 .

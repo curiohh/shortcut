@@ -1,0 +1,24 @@
+#!/bin/bash
+if [ $# -eq 0 ]
+  then
+    echo "Please supply the version number"
+    exit 1
+fi
+
+if [ -z "$1" ]
+  then
+    echo "Please supply the version number"
+    exit 1
+fi
+
+if [ -f /sys/hypervisor/uuid ] && [ `head -c 3 /sys/hypervisor/uuid` == ec2 ]; then
+    # ec2 machine
+    login_cmd=`aws ecr get-login --no-include-email --region ap-southeast-2`
+else
+    login_cmd=`aws ecr get-login --no-include-email --region ap-southeast-2 --profile curiohh`
+fi
+
+$login_cmd
+
+docker push 498224427881.dkr.ecr.ap-southeast-2.amazonaws.com/shortcut:$1
+
