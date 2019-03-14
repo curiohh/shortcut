@@ -115,19 +115,20 @@ app.use(helmet());
 
 // index route
 app.get('/', function(req, res) {
-  // load all episodes
-  let latestEpisodes =  JSON.stringify( routes.allEpisodeData.getAllEpisodes().slice(0, 600) );
-  if (!latestEpisodes) {
-    latestEpisodes = undefined;
-  }
+  res.status(200).send("works good")
+  // // load all episodes
+  // let latestEpisodes =  JSON.stringify( routes.allEpisodeData.getAllEpisodes().slice(0, 600) );
+  // if (!latestEpisodes) {
+  //   latestEpisodes = undefined;
+  // }
 
-  // inject latest episodes and app version into Marko HTML template
-  res.marko(template, {
-    // version of client JS code
-    latestEpisodes: latestEpisodes,
-    inactiveEpisodes: []
-    // inactiveEpisodes: process.env.BAD_EPISODES
-  });
+  // // inject latest episodes and app version into Marko HTML template
+  // res.marko(template, {
+  //   // version of client JS code
+  //   latestEpisodes: latestEpisodes,
+  //   inactiveEpisodes: []
+  //   // inactiveEpisodes: process.env.BAD_EPISODES
+  // });
 });
 
 app.get('/*', function (req, res, next) {
