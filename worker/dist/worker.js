@@ -10,6 +10,8 @@ var generateWaveForm_1 = __importDefault(require("./steps/generateWaveForm"));
 var attachWords_1 = __importDefault(require("./steps/attachWords"));
 var createPngs_1 = __importDefault(require("./steps/createPngs"));
 var createVideo_1 = __importDefault(require("./steps/createVideo"));
+var uploadVideo_1 = __importDefault(require("./steps/uploadVideo"));
+var cleanUp_1 = __importDefault(require("./steps/cleanUp"));
 var env_1 = require("./env");
 function start() {
     var videoQueue = new bull_1.default('video creating', env_1.REDIS_URI);
@@ -26,9 +28,7 @@ function start() {
             fps: 20
         };
         logging_1.pad(context.id, "Starting");
-        downloadFiles_1.default(context).then(function (context) { return (generateWaveForm_1.default(context)); }).then(function (context) { return (attachWords_1.default(context)); }).then(function (context) { return (createPngs_1.default(context)); }).then(function (context) { return (createVideo_1.default(context)); }) // .then(context => (
-            //   cleanUp(context)
-            // ))
+        downloadFiles_1.default(context).then(function (context) { return (generateWaveForm_1.default(context)); }).then(function (context) { return (attachWords_1.default(context)); }).then(function (context) { return (createPngs_1.default(context)); }).then(function (context) { return (createVideo_1.default(context)); }).then(function (context) { return (uploadVideo_1.default(context)); }).then(function (context) { return (cleanUp_1.default(context)); })
             .then(function (context) {
             logging_1.pad(context.id, "Done");
             done();

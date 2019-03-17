@@ -6,6 +6,7 @@ import generateWaveForm from './steps/generateWaveForm'
 import attachWords      from './steps/attachWords'
 import createPngs       from './steps/createPngs'
 import createVideo      from './steps/createVideo'
+import uploadVideo      from './steps/uploadVideo'
 import cleanUp          from './steps/cleanUp'
 import { REDIS_URI}     from './env'
 
@@ -51,6 +52,15 @@ export type Step6 = Step5 & {
   tempOutName: string
 }
 
+export type Step7 = Step6 & {
+  dstKey: string,
+  uploadResult: {
+    Bucket: string,
+    Key: string,
+    Location: string
+  }
+}
+
 export default function start(): void {
   const videoQueue = new queue('video creating', REDIS_URI);
 
@@ -74,13 +84,15 @@ export default function start(): void {
       generateWaveForm(context)
     )).then(context => (
       attachWords(context)
-     )).then(context => (
+    )).then(context => (
       createPngs(context)
     )).then(context => (
       createVideo(context)
-    ))// .then(context => (
-    //   cleanUp(context)
-    // ))
+    )).then(context => (
+      uploadVideo(context)
+    )).then(context => (
+      cleanUp(context)
+    ))
       .then(context => {
         pad(context.id, "Done")
         done()
