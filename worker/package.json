@@ -18,13 +18,12 @@
     "node": ">=6"
   },
   "dependencies": {
-    "@types/lodash": "^4.14.123",
-    "@types/request": "^2.48.1",
-    "@types/rimraf": "^2.0.2",
     "bull": "^3.7.0",
+    "canvas": "^1.6.6",
     "fs": "^0.0.1-security",
     "lodash": "^4.17.11",
     "paper-jsdom-canvas": "^0.12.0",
+    "path": "^0.12.7",
     "request": "^2.88.0",
     "rimraf": "^2.6.3",
     "waveform-util": "github:FeelTrainCoop/waveform-util"
@@ -33,6 +32,9 @@
     "@types/bull": "^3.5.8",
     "@types/dotenv": "^6.1.0",
     "@types/node": "^11.11.3",
+    "@types/lodash": "^4.14.123",
+    "@types/request": "^2.48.1",
+    "@types/rimraf": "^2.0.2",
     "dotenv": "^7.0.0",
     "moment": "^2.24.0",
     "typescript": "^3.3.3333"

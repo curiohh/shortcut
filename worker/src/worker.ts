@@ -4,6 +4,8 @@ import _                from 'lodash'
 import downloadFiles    from './steps/downloadFiles'
 import generateWaveForm from './steps/generateWaveForm'
 import attachWords      from './steps/attachWords'
+import createPngs       from './steps/createPngs'
+import createVideo      from './steps/createVideo'
 import cleanUp          from './steps/cleanUp'
 import { REDIS_URI}     from './env'
 
@@ -17,7 +19,8 @@ export interface Word {
 export type Step1 = {
   id: string,
   startTime: number,
-  stopTime: number
+  duration: number,
+  fps: number,
 }
 
 export type Step2 = Step1 & {
@@ -42,6 +45,12 @@ export type Step4 = Step3 & {
   words: Array<Word>
 }
 
+export type Step5 = Step4
+
+export type Step6 = Step5 & {
+  tempOutName: string
+}
+
 export default function start(): void {
   const videoQueue = new queue('video creating', REDIS_URI);
 
@@ -56,7 +65,8 @@ export default function start(): void {
     const context: Step1 = {
       id: job.data.id,
       startTime: 0,
-      stopTime: 29
+      duration: 29,
+      fps: 20
     }
 
     pad(context.id, `Starting`)
@@ -64,11 +74,16 @@ export default function start(): void {
       generateWaveForm(context)
     )).then(context => (
       attachWords(context)
+     )).then(context => (
+      createPngs(context)
     )).then(context => (
-      cleanUp(context)
-    )).then(context => {
-      pad(context.id, "Done")
-      done()
-    })
+      createVideo(context)
+    ))// .then(context => (
+    //   cleanUp(context)
+    // ))
+      .then(context => {
+        pad(context.id, "Done")
+        done()
+      })
   })
 }

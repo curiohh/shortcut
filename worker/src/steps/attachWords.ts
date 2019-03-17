@@ -21,7 +21,7 @@ export default async function attachWords(context: Step3): Promise<Step4> {
       _.filter(transcriptJSON.words, (word) => {
         const start = word.start
         const end = word.end
-        return start >= context.startTime && end <= context.stopTime
+        return start >= context.startTime && end <= context.startTime + context.duration
       }),
       (word, idx) => {
         return {

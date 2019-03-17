@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -45,39 +34,33 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs_1 = __importDefault(require("fs"));
-var lodash_1 = __importDefault(require("lodash"));
-function attachWords(context) {
+var logging_1 = require("../logging");
+var animate = require('../../vendor/anim-control');
+function createPngs(context) {
     return __awaiter(this, void 0, void 0, function () {
+        var opts;
         return __generator(this, function (_a) {
-            return [2 /*return*/, new Promise(function (resolve, reject) {
-                    var transcriptJSON;
-                    try {
-                        transcriptJSON = JSON.parse(fs_1.default.readFileSync(context.tempFiles.transcript, 'utf8'));
+            logging_1.pad(context.id, "Creating animation PNGs");
+            opts = {
+                style: {
+                    "bgColor": "#fedb55",
+                    "textColor2": "#333333",
+                    "waveColor": {
+                        "r": 1,
+                        "g": 94,
+                        "b": 170
                     }
-                    catch (err) {
-                        reject(new Error(err));
-                        return;
-                    }
-                    var words = lodash_1.default.map(lodash_1.default.filter(transcriptJSON.words, function (word) {
-                        var start = word.start;
-                        var end = word.end;
-                        return start >= context.startTime && end <= context.stopTime;
-                    }), function (word, idx) {
-                        return {
-                            start: word.start * 1000,
-                            end: word.end * 1000,
-                            text: word.word,
-                            idx: idx
-                        };
+                },
+                showNumber: context.id,
+                peaks: context.peaks
+            };
+            return [2 /*return*/, new Promise(function (resolve, _reject) {
+                    animate.start(context.tempDir, context.startTime, context.duration, context.words, null, opts, context.fps, function () {
+                        resolve(context);
                     });
-                    resolve(__assign({}, context, { words: words }));
                 })];
         });
     });
 }
-exports.attachWords = attachWords;
+exports.default = createPngs;

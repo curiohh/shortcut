@@ -45,41 +45,26 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var logging_1 = require("../logging");
-var fs_1 = __importDefault(require("fs"));
-var lodash_1 = __importDefault(require("lodash"));
-function attachWords(context) {
+var merge = require('../../vendor/merge');
+function createPngs(context) {
     return __awaiter(this, void 0, void 0, function () {
+        var tempOutName;
         return __generator(this, function (_a) {
-            logging_1.pad(context.id, "Attaching Words");
+            logging_1.pad(context.id, "Creating Video");
+            tempOutName = context.tempDir + "/video.mp4";
             return [2 /*return*/, new Promise(function (resolve, reject) {
-                    var transcriptJSON;
-                    try {
-                        transcriptJSON = JSON.parse(fs_1.default.readFileSync(context.tempFiles.transcript, 'utf8'));
-                    }
-                    catch (err) {
-                        reject(new Error(err));
-                        return;
-                    }
-                    var words = lodash_1.default.map(lodash_1.default.filter(transcriptJSON.words, function (word) {
-                        var start = word.start;
-                        var end = word.end;
-                        return start >= context.startTime && end <= context.startTime + context.duration;
-                    }), function (word, idx) {
-                        return {
-                            start: word.start * 1000,
-                            end: word.end * 1000,
-                            text: word.word,
-                            idx: idx
-                        };
+                    merge.mergeFiles(context.tempDir, context.tempFiles.audio, context.startTime, context.duration, tempOutName, context.fps, function (err, _success) {
+                        if (err) {
+                            reject(new Error(err));
+                        }
+                        else {
+                            resolve(__assign({}, context, { tempOutName: tempOutName }));
+                        }
                     });
-                    resolve(__assign({}, context, { words: words }));
                 })];
         });
     });
 }
-exports.default = attachWords;
+exports.default = createPngs;
