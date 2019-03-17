@@ -58,26 +58,36 @@ var lodash_1 = __importDefault(require("lodash"));
 var env_1 = require("./env");
 function downloadFiles(context) {
     return __awaiter(this, void 0, void 0, function () {
-        var filesToDownload, tempFiles, promises;
+        var filesToDownload, tempDir, tempFiles, promises;
         return __generator(this, function (_a) {
-            logging_1.pad("Downloading Files");
             filesToDownload = {
-                audio: env_1.FILES_BASE_URI + "/podcast_snipped.mp3",
-                transcript: env_1.FILES_BASE_URI + "/transcript.json"
+                audio: env_1.FILES_BASE_URI + "/" + context.id + "+/podcast_snipped.mp3",
+                transcript: env_1.FILES_BASE_URI + "/" + context.id + "+/transcript.json"
             };
+            tempDir = "/tmp/shortcut-worker/" + context.id;
             tempFiles = {
-                audio: "/tmp/shortcut-worker/" + context.id + "/audio",
-                transcript: "/tmp/shortcut-worker/" + context.id + "/transcript"
+                audio: tempDir + "/audio",
+                transcript: tempDir + "/transcript"
             };
+            if (!fs_1.default.existsSync('/tmp/shortcut-worker')) {
+                fs_1.default.mkdirSync('/tmp/shortcut-worker');
+            }
+            if (!fs_1.default.existsSync(tempDir)) {
+                fs_1.default.mkdirSync(tempDir);
+            }
             promises = lodash_1.default.map(tempFiles, function (v, k) {
                 return new Promise(function (resolve, reject) {
                     var localStream = fs_1.default.createWriteStream(v);
-                    var req = request_1.default.get(filesToDownload[k]);
+                    var fileToDownload = filesToDownload[k];
+                    logging_1.pad(context.id, "Downloading " + fileToDownload);
+                    var req = request_1.default.get(fileToDownload);
                     req.on('error', function (err) {
                         reject(err);
                     }).on('response', function (response) {
+                        logging_1.pad(context.id, "Writing " + k + " download stream locally");
                         response.pipe(localStream);
                     }).on('end', function (_response) {
+                        logging_1.pad(context.id, "Finished writing " + k + " stream");
                         resolve();
                     });
                 });
@@ -88,7 +98,7 @@ function downloadFiles(context) {
     });
 }
 function generateWaveForm(context) {
-    logging_1.pad("Generating Wave Form");
+    logging_1.pad(context.id, "Generating Wave Form");
     return makeWaveForm_1.default(context.tempFiles.audio, 1000).then(function (peaks) { return (__assign({}, context, { peaks: peaks })); });
 }
 function attachWordArray(context) {
@@ -129,9 +139,9 @@ function start() {
             startTime: 0,
             stopTime: 29
         };
-        logging_1.pad("Starting ${context.id }");
+        logging_1.pad(context.id, "Starting");
         downloadFiles(context).then(function (context) { return (generateWaveForm(context)); }).then(function (context) { return (attachWordArray(context)); }).then(function (context) {
-            logging_1.arrow(JSON.stringify(context, null, 2));
+            logging_1.pad(context.id, "Done");
             done();
         });
     });

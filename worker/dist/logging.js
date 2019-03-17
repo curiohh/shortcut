@@ -5,14 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var moment_1 = __importDefault(require("moment"));
 function now() {
-    return moment_1.default().format();
+    return moment_1.default().format('YYYY-MM-DDTHH:mm:ss:SSSSZ');
 }
-function pad(words) {
+function pad(id, words) {
     var rest = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        rest[_i - 1] = arguments[_i];
+    for (var _i = 2; _i < arguments.length; _i++) {
+        rest[_i - 2] = arguments[_i];
     }
-    console.log.apply(console, [now() + "      " + words].concat(rest));
+    console.log.apply(console, [now() + "      " + id + " - " + words].concat(rest));
 }
 exports.pad = pad;
 function arrow(words) {

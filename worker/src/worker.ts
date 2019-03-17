@@ -43,28 +43,40 @@ type Step4 = Step3 & {
 }
 
 async function downloadFiles(context: Step1): Promise<Step2> {
-  pad("Downloading Files")
-
   const filesToDownload = {
-    audio: `${FILES_BASE_URI}/podcast_snipped.mp3`,
-    transcript: `${FILES_BASE_URI}/transcript.json`
+    audio: `${FILES_BASE_URI}/${context.id}+/podcast_snipped.mp3`,
+    transcript: `${FILES_BASE_URI}/${context.id}+/transcript.json`
   }
 
+  const tempDir = `/tmp/shortcut-worker/${context.id}`
+
   const tempFiles = {
-    audio: `/tmp/shortcut-worker/${context.id}/audio`,
-    transcript: `/tmp/shortcut-worker/${context.id}/transcript`
+    audio: `${tempDir}/audio`,
+    transcript: `${tempDir}/transcript`
+  }
+
+  if (!fs.existsSync('/tmp/shortcut-worker')){
+    fs.mkdirSync('/tmp/shortcut-worker')
+  }
+
+  if (!fs.existsSync(tempDir)){
+    fs.mkdirSync(tempDir)
   }
 
   const promises: Array<Promise<any>> = _.map(tempFiles, (v, k) => {
     return new Promise((resolve, reject) => {
       const localStream = fs.createWriteStream(v)
-      const req = request.get(filesToDownload[k as keyof(typeof filesToDownload)])
+      const fileToDownload = filesToDownload[k as keyof(typeof filesToDownload)]
+      pad(context.id, `Downloading ${fileToDownload}`)
+      const req = request.get(fileToDownload)
 
       req.on('error', err => {
         reject(err)
       }).on('response', response => {
+        pad(context.id, `Writing ${k} download stream locally`)
         response.pipe(localStream)
       }).on('end', _response => {
+        pad(context.id, `Finished writing ${k} stream`)
         resolve()
       })
     })
@@ -78,7 +90,7 @@ async function downloadFiles(context: Step1): Promise<Step2> {
 }
 
 function generateWaveForm(context: Step2): Promise<Step3> {
-  pad("Generating Wave Form")
+  pad(context.id, "Generating Wave Form")
   return makeWaveForm(context.tempFiles.audio, 1000).then(peaks => ({
     ...context,
     peaks: peaks
@@ -137,13 +149,13 @@ export default function start(): void {
       stopTime: 29
     }
 
-    pad("Starting ${context.id }")
+    pad(context.id, `Starting`)
     downloadFiles(context).then(context => (
       generateWaveForm(context)
     )).then(context => (
       attachWordArray(context)
     )).then(context => {
-      arrow(JSON.stringify(context, null, 2))
+      pad(context.id, "Done")
       done()
     })
   })
