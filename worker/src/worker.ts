@@ -64,7 +64,7 @@ export type Step7 = Step6 & {
 export default function start(): void {
   const videoQueue = new queue('video creating', REDIS_URI);
 
-  videoQueue.process((job, done): void => {
+  videoQueue.process((job: { data: { id : string } }, done: Function): void => {
     arrow("Received message");
 
     if (!job.data.id) {
