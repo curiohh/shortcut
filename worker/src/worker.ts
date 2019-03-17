@@ -1,29 +1,26 @@
-import { arrow, pad, error } from './logging'
-import  makeWaveForm         from './unclean/makeWaveForm'
-import queue                 from 'bull'
-import fs                    from 'fs'
-import rimraf                from 'rimraf'
-import request               from 'request'
-import _                     from 'lodash'
-import {
-  REDIS_URI,
-  FILES_BASE_URI
-} from './env'
+import { arrow, pad }   from './logging'
+import queue            from 'bull'
+import _                from 'lodash'
+import downloadFiles    from './steps/downloadFiles'
+import generateWaveForm from './steps/generateWaveForm'
+import attachWords      from './steps/attachWords'
+import cleanUp          from './steps/cleanUp'
+import { REDIS_URI}     from './env'
 
-interface Word {
+export interface Word {
   start: number,
   end: number,
   idx: number,
   text: string
 }
 
-type Step1 = {
+export type Step1 = {
   id: string,
   startTime: number,
   stopTime: number
 }
 
-type Step2 = Step1 & {
+export type Step2 = Step1 & {
   tempDir: string,
 
   filesToDownload: {
@@ -37,110 +34,12 @@ type Step2 = Step1 & {
   }
 }
 
-type Step3 = Step2 & {
+export type Step3 = Step2 & {
   peaks: Array<number>
 }
 
-type Step4 = Step3 & {
+export type Step4 = Step3 & {
   words: Array<Word>
-}
-
-async function downloadFiles(context: Step1): Promise<Step2> {
-  const filesToDownload = {
-    audio: `${FILES_BASE_URI}/${context.id}+/podcast_snipped.mp3`,
-    transcript: `${FILES_BASE_URI}/${context.id}+/transcript.json`
-  }
-
-  const tempDir = `/tmp/shortcut-worker/${context.id}`
-
-  const tempFiles = {
-    audio: `${tempDir}/audio`,
-    transcript: `${tempDir}/transcript`
-  }
-
-  if (!fs.existsSync('/tmp/shortcut-worker')){
-    fs.mkdirSync('/tmp/shortcut-worker')
-  }
-
-  if (!fs.existsSync(tempDir)){
-    fs.mkdirSync(tempDir)
-  }
-
-  const promises: Array<Promise<any>> = _.map(tempFiles, (v, k) => {
-    return new Promise((resolve, reject) => {
-      const localStream = fs.createWriteStream(v)
-      const fileToDownload = filesToDownload[k as keyof(typeof filesToDownload)]
-      pad(context.id, `Downloading ${fileToDownload}`)
-      const req = request.get(fileToDownload)
-
-      req.on('error', err => {
-        reject(err)
-      }).on('response', response => {
-        pad(context.id, `Writing ${k} download stream locally`)
-        response.pipe(localStream)
-      }).on('end', _response => {
-        pad(context.id, `Finished writing ${k} stream`)
-        resolve()
-      })
-    })
-  })
-
-  return Promise.all(promises).then(() => ({
-    ...context,
-    tempDir,
-    filesToDownload,
-    tempFiles
-  }))
-}
-
-function generateWaveForm(context: Step2): Promise<Step3> {
-  pad(context.id, "Generating Wave Form")
-  return makeWaveForm(context.tempFiles.audio, 1000).then(peaks => ({
-    ...context,
-    peaks: peaks
-  }))
-}
-
-function attachWordArray(context: Step3): Promise<Step4> {
-  return new Promise((resolve, reject) => {
-    let transcriptJSON
-
-    try {
-      transcriptJSON = JSON.parse(fs.readFileSync(context.tempFiles.transcript, 'utf8'))
-    }
-    catch (err) {
-      reject(new Error(err))
-      return
-    }
-
-    const words = _.map(
-      _.filter(transcriptJSON.words, (word) => {
-        const start = word.start
-        const end = word.end
-        return start >= context.startTime && end <= context.stopTime
-      }),
-      (word, idx) => {
-        return {
-          start: word.start * 1000,
-          end: word.end * 1000,
-          text: word.word,
-          idx
-        }
-      }
-    )
-
-    resolve({
-      ...context,
-      words: words
-    })
-  })
-}
-
-async function cleanUp(context: Step4): Promise<Step4> {
-  pad(context.id, "Cleaning Up")
-  return new Promise((resolve, _reject) => {
-    rimraf(context.tempDir, () => resolve(context))
-  })
 }
 
 export default function start(): void {
@@ -164,7 +63,7 @@ export default function start(): void {
     downloadFiles(context).then(context => (
       generateWaveForm(context)
     )).then(context => (
-      attachWordArray(context)
+      attachWords(context)
     )).then(context => (
       cleanUp(context)
     )).then(context => {
