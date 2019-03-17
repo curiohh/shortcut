@@ -2,6 +2,7 @@ import { arrow, pad, error } from './logging'
 import  makeWaveForm         from './unclean/makeWaveForm'
 import queue                 from 'bull'
 import fs                    from 'fs'
+import rimraf                from 'rimraf'
 import request               from 'request'
 import _                     from 'lodash'
 import {
@@ -23,6 +24,8 @@ type Step1 = {
 }
 
 type Step2 = Step1 & {
+  tempDir: string,
+
   filesToDownload: {
     audio: string,
     transcript: string
@@ -84,6 +87,7 @@ async function downloadFiles(context: Step1): Promise<Step2> {
 
   return Promise.all(promises).then(() => ({
     ...context,
+    tempDir,
     filesToDownload,
     tempFiles
   }))
@@ -132,6 +136,13 @@ function attachWordArray(context: Step3): Promise<Step4> {
   })
 }
 
+async function cleanUp(context: Step4): Promise<Step4> {
+  pad(context.id, "Cleaning Up")
+  return new Promise((resolve, _reject) => {
+    rimraf(context.tempDir, () => resolve(context))
+  })
+}
+
 export default function start(): void {
   const videoQueue = new queue('video creating', REDIS_URI);
 
@@ -154,6 +165,8 @@ export default function start(): void {
       generateWaveForm(context)
     )).then(context => (
       attachWordArray(context)
+    )).then(context => (
+      cleanUp(context)
     )).then(context => {
       pad(context.id, "Done")
       done()

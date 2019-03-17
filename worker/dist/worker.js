@@ -53,6 +53,7 @@ var logging_1 = require("./logging");
 var makeWaveForm_1 = __importDefault(require("./unclean/makeWaveForm"));
 var bull_1 = __importDefault(require("bull"));
 var fs_1 = __importDefault(require("fs"));
+var rimraf_1 = __importDefault(require("rimraf"));
 var request_1 = __importDefault(require("request"));
 var lodash_1 = __importDefault(require("lodash"));
 var env_1 = require("./env");
@@ -92,7 +93,8 @@ function downloadFiles(context) {
                     });
                 });
             });
-            return [2 /*return*/, Promise.all(promises).then(function () { return (__assign({}, context, { filesToDownload: filesToDownload,
+            return [2 /*return*/, Promise.all(promises).then(function () { return (__assign({}, context, { tempDir: tempDir,
+                    filesToDownload: filesToDownload,
                     tempFiles: tempFiles })); })];
         });
     });
@@ -126,6 +128,16 @@ function attachWordArray(context) {
         resolve(__assign({}, context, { words: words }));
     });
 }
+function cleanUp(context) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            logging_1.pad(context.id, "Cleaning Up");
+            return [2 /*return*/, new Promise(function (resolve, _reject) {
+                    rimraf_1.default(context.tempDir, function () { return resolve(context); });
+                })];
+        });
+    });
+}
 function start() {
     var videoQueue = new bull_1.default('video creating', env_1.REDIS_URI);
     videoQueue.process(function (job, done) {
@@ -140,7 +152,7 @@ function start() {
             stopTime: 29
         };
         logging_1.pad(context.id, "Starting");
-        downloadFiles(context).then(function (context) { return (generateWaveForm(context)); }).then(function (context) { return (attachWordArray(context)); }).then(function (context) {
+        downloadFiles(context).then(function (context) { return (generateWaveForm(context)); }).then(function (context) { return (attachWordArray(context)); }).then(function (context) { return (cleanUp(context)); }).then(function (context) {
             logging_1.pad(context.id, "Done");
             done();
         });
